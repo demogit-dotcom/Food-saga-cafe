@@ -1,40 +1,25 @@
-# Enable rewrite engine for clean URLs
-RewriteEngine On
+# Serve Next.js static export with clean URLs on Apache
+# Fixes 403 Forbidden when refreshing/opening routes like /contact directly.
 
-# Handle Next.js static export routing
-# If the request is not for a file or directory, serve the corresponding .html file
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME}.html -f
-RewriteRule ^(.*)$ $1.html [L]
+# Don't let Apache guess file names, and don't auto-redirect folders to a
+# trailing slash (the route folders only contain .txt data, no index.html).
+Options -MultiViews
+DirectorySlash Off
 
-# Fallback to index.html for any unmatched routes
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /index.html [L]
+<IfModule mod_rewrite.c>
+  RewriteEngine On
 
-# Cache static assets
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType image/webp "access plus 1 year"
-    ExpiresByType image/avif "access plus 1 year"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/svg+xml "access plus 1 year"
-    ExpiresByType video/mp4 "access plus 1 year"
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType font/woff2 "access plus 1 year"
+  # If the exact file or symlink exists, serve it as-is
+  # (covers /_next assets, images, videos, *.txt, *.html, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -l
+  RewriteRule ^ - [L]
+
+  # Map an extensionless clean URL to its .html file
+  # e.g. /contact -> /contact.html, /about -> /about.html
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+?)/?$ $1.html [L]
 </IfModule>
 
-# Compression
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
-</IfModule>
-
-# Security headers
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "DENY"
-    Header set X-XSS-Protection "1; mode=block"
-</IfModule>
+# Custom error page for unknown routes
+ErrorDocument 404 /404.html
