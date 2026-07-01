@@ -31,5 +31,5 @@ jobs:
           username: u354888442
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
-          server-dir: /public_html/
+          server-dir: /home/u354888442/domains/cafefoodsaga.in/public_html/
           port: 21
