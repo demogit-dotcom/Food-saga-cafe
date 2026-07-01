@@ -1,0 +1,25 @@
+# Serve Next.js static export with clean URLs on Apache
+# Fixes 403 Forbidden when refreshing/opening routes like /contact directly.
+
+# Don't let Apache guess file names, and don't auto-redirect folders to a
+# trailing slash (the route folders only contain .txt data, no index.html).
+Options -MultiViews
+DirectorySlash Off
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # If the exact file or symlink exists, serve it as-is
+  # (covers /_next assets, images, videos, *.txt, *.html, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -l
+  RewriteRule ^ - [L]
+
+  # Map an extensionless clean URL to its .html file
+  # e.g. /contact -> /contact.html, /about -> /about.html
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+?)/?$ $1.html [L]
+</IfModule>
+
+# Custom error page for unknown routes
+ErrorDocument 404 /404.html
